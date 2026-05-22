@@ -146,6 +146,20 @@ input[type=text]:focus,select:focus{border-color:var(--amber);background:#fff}
     </div>
 
     <div class="card">
+      <div class="card-head">🔑 API Key</div>
+      <div class="card-body">
+        <div class="field">
+          <label for="ak">Anthropic API Key</label>
+          <input type="password" id="ak" placeholder="sk-ant-...">
+        </div>
+        <div style="font-size:11px;color:var(--muted);margin-top:6px;line-height:1.6">
+          Get a key at <a href="https://console.anthropic.com" target="_blank" style="color:var(--amber)">console.anthropic.com</a>. 
+          Your key is stored only in your browser and never sent anywhere except the Anthropic API.
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
       <div class="card-head">👤 Student Details</div>
       <div class="card-body">
         <div class="field">
@@ -233,8 +247,11 @@ uz.addEventListener('drop',function(e){e.preventDefault();uz.classList.remove('o
 
 function hf(f){imtype=f.type;var r=new FileReader();r.onload=function(e){b64=e.target.result.split(',')[1];pi.src=e.target.result;pw.style.display='block';chk()};r.readAsDataURL(f)}
 function clr(){b64=null;imtype=null;pw.style.display='none';pi.src='';fi.value='';chk()}
-function chk(){ab.disabled=!(b64&&document.getElementById('sn').value.trim())}
+function chk(){ab.disabled=!(b64&&document.getElementById('sn').value.trim()&&document.getElementById('ak').value.trim())}
 document.getElementById('sn').addEventListener('input',chk);
+document.getElementById('ak').addEventListener('input',function(){localStorage.setItem('isn_api_key',this.value);chk()});
+// Restore saved key
+(function(){var k=localStorage.getItem('isn_api_key');if(k){document.getElementById('ak').value=k}})()
 
 function sw(id){
   var ids=['tr','er','ta','tn'];
@@ -251,12 +268,14 @@ async function doAnalyse(){
   var tt=document.getElementById('tt').value.trim();
   if(!b64){shErr('Please upload a photo of the student\'s work.');return}
   if(!nm){shErr('Please enter the student\'s name.');return}
+  var apiKey=document.getElementById('ak').value.trim();
+  if(!apiKey){shErr('Please enter your Anthropic API key.');return}
   hideErr();
   sInfo={name:nm,year:yg,stage:cs,task:tt,date:new Date().toLocaleDateString('en-GB',{day:'numeric',month:'long',year:'numeric'})};
   setLoad(true);
   var stages=['Reading handwriting…','Identifying errors…','Comparing to Cambridge level…','Generating follow-up tasks…','Almost done…'];
   var si=0;var iv=setInterval(function(){si=(si+1)%stages.length;document.getElementById('ls').textContent=stages[si]},2200);
-  try{var res=await callApi();clearInterval(iv);aData=res;render(res)}
+  try{var res=await callApi(apiKey);clearInterval(iv);aData=res;render(res)}
   catch(e){clearInterval(iv);shErr('Analysis failed: '+e.message);setLoad(false);document.getElementById('es').style.display='block'}
 }
 
@@ -267,12 +286,17 @@ function setLoad(on){
   ab.disabled=on;document.getElementById('bt').textContent=on?'Analysing…':'Analyse Writing';
 }
 
-async function callApi(){
+async function callApi(apiKey){
   var sys='You are an expert English teacher and Cambridge-trained assessor specialising in KS3 English and Cambridge Lower Secondary/IGCSE programmes. Analyse the handwritten student work in the image.\n\nTasks:\n1. Transcribe the text accurately (preserve original student wording, do not correct)\n2. Identify ALL grammar, spelling, and punctuation errors\n3. Classify each: PATTERN (recurring/systematic, 2+ occurrences or clear knowledge gap) vs CARELESS (one-off slip inconsistent with overall ability)\n4. Assess against Cambridge descriptors for '+sInfo.stage+'\n5. Generate targeted follow-up exercises (at least 2 per identified pattern error)\n\nCAMBRIDGE LEVEL DESCRIPTORS:\n- Primary Stage 6: Simple/compound sentences, basic punctuation (full stops, capitals, commas, question marks), short paragraphs, common vocabulary, phonetically plausible spelling of most words\n- Lower Secondary Stage 7: Compound/complex sentences attempted, apostrophes for omission, direct speech attempted, consistent paragraphing, wider vocabulary, most common words spelt correctly\n- Lower Secondary Stage 8: Variety of sentence structures for deliberate effect, colons/semicolons/dashes used, sustained paragraphing, ambitious vocabulary, complex spelling mostly accurate\n- Lower Secondary Stage 9: Sophisticated controlled syntax, full punctuation repertoire used purposefully, cohesive structure, precise varied vocabulary, near-accurate spelling of complex words\n- Pre-IGCSE: IGCSE-level writing, sophisticated register, crafted language choices, writing shaped for effect\n\nReturn ONLY valid JSON (no markdown fences, no preamble):\n{"transcription":"","word_count":0,"overall_assessment":{"current_level":"","expected_level":"'+sInfo.stage+'","meeting_expectations":true,"above_expectations":false,"summary":"2-3 sentence holistic assessment"},"strengths":["strength1","strength2"],"errors":{"spelling":{"patterns":[{"error":"","examples":[""],"frequency":0,"teaching_focus":""}],"careless":[{"error":"","example":"","correction":""}]},"grammar":{"patterns":[...],"careless":[...]},"punctuation":{"patterns":[...],"careless":[...]}},"follow_up_tasks":[{"id":1,"title":"","targets":"pattern","skill":"spelling|grammar|punctuation","error_being_addressed":"","introduction":"2-3 student-facing sentences about what to work on","teaching_point":"3-5 sentence student-friendly rule explanation","exercises":[{"type":"gap_fill|correction|rewrite","instruction":"clear student-facing instruction","content":"full exercise with 6-8 complete sentences or items","answer_guide":"teacher notes on correct answers"}]}],"accuracy_tasks":[{"title":"Proofreading and Accuracy","introduction":"","exercises":[{"type":"proofreading","instruction":"Find and correct all the errors in this passage:","content":"50-80 word passage with 6-8 deliberate errors matching the student\'s careless mistake types","answer_guide":"list each error and its correction"}]}],"teacher_notes":"professional notes: key patterns, ESL interference indicators, priority teaching points, suggested groupings with similar students"}';
 
   var resp=await fetch('https://api.anthropic.com/v1/messages',{
     method:'POST',
-    headers:{'Content-Type':'application/json'},
+    headers:{
+        'Content-Type':'application/json',
+        'x-api-key':apiKey,
+        'anthropic-version':'2023-06-01',
+        'anthropic-dangerous-direct-browser-access':'true'
+      },
     body:JSON.stringify({
       model:'claude-sonnet-4-20250514',
       max_tokens:4096,
