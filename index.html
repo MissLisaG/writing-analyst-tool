@@ -1,0 +1,451 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ISN Writing Analyst</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=Lora:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --navy:#1c2b45;--navy2:#253555;
+  --cream:#f5f0e8;--cream2:#ede7d7;
+  --amber:#c07820;--amber2:#e8a030;
+  --teal:#1e7b60;--teal2:#28a07e;
+  --red:#b82c2c;
+  --text:#1a1a1a;--muted:#666;
+  --border:#d8d0c0;
+  --white:#fff;
+  --shadow:0 1px 12px rgba(28,43,69,.1)
+}
+body{font-family:'DM Sans',sans-serif;background:var(--cream);color:var(--text);min-height:100vh}
+/* Header */
+.hdr{background:var(--navy);color:#fff;padding:16px 32px;display:flex;align-items:center;justify-content:space-between;border-bottom:3px solid var(--amber)}
+.hdr-title{font-size:19px;font-weight:600;letter-spacing:.01em}
+.hdr-title span{color:var(--amber2)}
+.hdr-sub{font-size:12px;color:rgba(255,255,255,.6);margin-top:2px}
+/* Layout */
+main{max-width:1120px;margin:0 auto;padding:32px 24px;display:grid;grid-template-columns:340px 1fr;gap:28px;align-items:start}
+@media(max-width:780px){main{grid-template-columns:1fr;padding:20px 16px}}
+/* Cards */
+.card{background:var(--white);border-radius:10px;box-shadow:var(--shadow);overflow:hidden;margin-bottom:16px}
+.card-head{background:var(--navy);color:#fff;padding:11px 18px;font-size:12px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;display:flex;align-items:center;gap:7px}
+.card-body{padding:18px}
+/* Upload */
+.uz{border:2px dashed var(--border);border-radius:8px;padding:28px 16px;text-align:center;cursor:pointer;transition:all .2s;position:relative;background:var(--cream)}
+.uz:hover,.uz.over{border-color:var(--amber);background:rgba(192,120,32,.04)}
+.uz input{position:absolute;inset:0;opacity:0;cursor:pointer;font-size:0}
+.uz-icon{font-size:32px;margin-bottom:6px;color:var(--amber)}
+.uz-txt{font-size:13px;color:var(--muted);line-height:1.7}
+.uz-txt strong{color:var(--amber)}
+.prev-wrap{display:none;margin-top:12px;position:relative}
+.prev-wrap img{width:100%;border-radius:6px;border:1px solid var(--border)}
+.rm{position:absolute;top:6px;right:6px;background:rgba(0,0,0,.55);color:#fff;border:none;border-radius:50%;width:24px;height:24px;cursor:pointer;font-size:13px;display:flex;align-items:center;justify-content:center}
+/* Fields */
+.field{margin-top:14px}
+label{display:block;font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--navy);margin-bottom:5px}
+input[type=text],select{width:100%;padding:8px 11px;border:1.5px solid var(--border);border-radius:6px;font-family:'DM Sans',sans-serif;font-size:13px;color:var(--text);background:var(--cream);transition:border-color .2s;outline:none}
+input[type=text]:focus,select:focus{border-color:var(--amber);background:#fff}
+.frow{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:14px}
+.frow .field{margin-top:0}
+.errmsg{font-size:12px;color:var(--red);background:rgba(184,44,44,.07);border:1px solid rgba(184,44,44,.2);border-radius:6px;padding:7px 10px;margin-top:10px;display:none}
+.btn-analyse{width:100%;margin-top:16px;padding:11px;background:var(--navy);color:#fff;border:none;border-radius:8px;font-family:'DM Sans',sans-serif;font-size:14px;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;transition:all .2s}
+.btn-analyse:hover:not(:disabled){background:var(--navy2);transform:translateY(-1px);box-shadow:0 4px 12px rgba(28,43,69,.2)}
+.btn-analyse:disabled{opacity:.45;cursor:not-allowed;transform:none}
+/* Loading */
+.loading{display:none;padding:48px 24px;text-align:center}
+.spinner{width:36px;height:36px;border:3px solid var(--cream2);border-top-color:var(--navy);border-radius:50%;animation:spin .75s linear infinite;margin:0 auto 14px}
+@keyframes spin{to{transform:rotate(360deg)}}
+.load-stage{font-size:12px;color:var(--amber);margin-top:8px;min-height:18px}
+/* Empty */
+.empty{padding:56px 24px;text-align:center;color:var(--muted)}
+.empty-icon{font-size:44px;margin-bottom:12px}
+/* Results */
+.results{display:none}
+/* Assess bar */
+.abar{padding:18px;background:var(--navy);color:#fff;border-radius:10px 10px 0 0}
+.aname{font-family:'Lora',serif;font-size:22px;font-weight:600;margin-bottom:4px}
+.ameta{display:flex;gap:14px;flex-wrap:wrap;font-size:12px;color:rgba(255,255,255,.65);margin-bottom:8px}
+.lbadge{display:inline-flex;align-items:center;gap:5px;padding:4px 10px;border-radius:20px;font-size:11px;font-weight:600}
+.lbm{background:rgba(30,123,96,.3);color:#7dd3c0;border:1px solid rgba(30,123,96,.5)}
+.lba{background:rgba(0,100,220,.25);color:#93c5fd;border:1px solid rgba(0,100,220,.4)}
+.lbb{background:rgba(184,44,44,.3);color:#fca5a5;border:1px solid rgba(184,44,44,.5)}
+/* Tabs */
+.tabs{display:flex;background:var(--white);border-bottom:1.5px solid var(--cream2);overflow-x:auto}
+.tab{padding:10px 16px;font-size:13px;font-weight:400;cursor:pointer;border:none;background:none;color:var(--muted);border-bottom:2.5px solid transparent;margin-bottom:-1.5px;white-space:nowrap;font-family:'DM Sans',sans-serif;transition:all .15s}
+.tab.on{color:var(--navy);font-weight:600;border-bottom-color:var(--amber)}
+.tab:hover:not(.on){color:var(--navy)}
+.tpanel{display:none;padding:18px}
+.tpanel.on{display:block}
+/* Transcription */
+.sum-txt{font-size:14px;line-height:1.75;margin-bottom:12px;color:var(--text)}
+.str-row{display:flex;flex-wrap:wrap;gap:7px;margin-bottom:12px}
+.pill{background:rgba(30,123,96,.08);color:var(--teal);border:1px solid rgba(30,123,96,.2);border-radius:20px;padding:3px 10px;font-size:12px}
+.transcript{font-family:'Lora',serif;font-size:15px;line-height:1.9;padding:14px 16px;background:var(--cream);border-radius:7px;max-height:220px;overflow-y:auto;white-space:pre-wrap;border:1px solid var(--border);color:var(--text)}
+/* Errors */
+.ecat{font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);padding:10px 18px 6px;background:var(--cream);border-bottom:1px solid var(--cream2)}
+.erow{padding:10px 18px;border-bottom:1px solid var(--cream2);display:flex;gap:10px;align-items:flex-start}
+.etag{flex-shrink:0;font-size:10px;font-weight:700;padding:2px 7px;border-radius:3px;letter-spacing:.05em;text-transform:uppercase;margin-top:1px}
+.ep{background:rgba(184,44,44,.1);color:var(--red);border:1px solid rgba(184,44,44,.2)}
+.ec{background:rgba(192,120,32,.1);color:var(--amber);border:1px solid rgba(192,120,32,.2)}
+.edes{font-size:13px;font-weight:600;margin-bottom:2px}
+.eex{font-size:12px;color:var(--muted);font-style:italic}
+.efoc{font-size:11px;color:var(--teal);margin-top:2px}
+/* Tasks */
+.task{border:1px solid var(--border);border-radius:9px;margin-bottom:12px;overflow:hidden}
+.thead{padding:12px 16px;display:flex;align-items:center;gap:10px;cursor:pointer;background:var(--cream2);user-select:none}
+.thead:hover{background:var(--cream)}
+.tnum{width:27px;height:27px;background:var(--navy);color:#fff;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;flex-shrink:0}
+.tinfo{flex:1}
+.ttit{font-size:13px;font-weight:600}
+.tsub{font-size:11px;color:var(--muted);margin-top:2px}
+.tchev{color:var(--muted);font-size:18px;transition:transform .2s;line-height:1}
+.tbody{display:none;padding:16px;border-top:1px solid var(--border)}
+.tbody.on{display:block}
+.tintro{font-size:13px;line-height:1.7;padding:9px 12px;background:var(--cream);border-radius:6px;border-left:3px solid var(--amber);margin-bottom:12px;color:var(--muted)}
+.tpt{font-size:13px;line-height:1.75;margin-bottom:14px}
+.ex{border:1px solid var(--cream2);border-radius:7px;padding:12px 14px;margin-bottom:10px}
+.exinstr{font-size:13px;font-weight:600;color:var(--navy);margin-bottom:8px}
+.excont{font-size:14px;line-height:1.85;white-space:pre-wrap;font-family:'Lora',serif}
+.exguide{font-size:11px;color:var(--muted);border-top:1px dashed var(--border);margin-top:8px;padding-top:7px;font-style:italic}
+/* Teacher notes */
+.tnotes{font-size:14px;line-height:1.8;white-space:pre-wrap}
+/* Download btn */
+.btn-dl{display:flex;align-items:center;justify-content:center;gap:8px;width:calc(100% - 36px);margin:0 18px 18px;padding:11px;background:var(--teal);color:#fff;border:none;border-radius:8px;font-family:'DM Sans',sans-serif;font-size:14px;font-weight:600;cursor:pointer;transition:all .2s}
+.btn-dl:hover{background:var(--teal2);transform:translateY(-1px);box-shadow:0 4px 12px rgba(30,123,96,.2)}
+.no-errs,.no-tasks{padding:20px;text-align:center;color:var(--muted);font-size:13px}
+</style>
+</head>
+<body>
+
+<header class="hdr">
+  <div>
+    <div class="hdr-title">ISN <span>Writing Analyst</span></div>
+    <div class="hdr-sub">Cambridge KS3 · Grammar, Spelling &amp; Follow-up Generator</div>
+  </div>
+  <div style="font-size:12px;color:rgba(255,255,255,.45);text-align:right">Powered by Claude AI</div>
+</header>
+
+<main>
+  <!-- LEFT PANEL -->
+  <div>
+    <div class="card">
+      <div class="card-head">📷 Student Submission</div>
+      <div class="card-body">
+        <div class="uz" id="uz">
+          <input type="file" id="fi" accept="image/*" aria-label="Upload handwritten work">
+          <div class="uz-icon">📝</div>
+          <div class="uz-txt"><strong>Click or drag to upload</strong><br>a photo of handwritten student work<br><span style="font-size:11px">JPG · PNG · HEIC accepted</span></div>
+        </div>
+        <div class="prev-wrap" id="pw">
+          <img id="pi" src="" alt="Student work preview">
+          <button class="rm" id="rmb" title="Remove image">✕</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-head">👤 Student Details</div>
+      <div class="card-body">
+        <div class="field">
+          <label for="sn">Student Name</label>
+          <input type="text" id="sn" placeholder="e.g. Emma Schmidt">
+        </div>
+        <div class="frow">
+          <div class="field">
+            <label for="yg">Year Group</label>
+            <select id="yg">
+              <option value="">— Select —</option>
+              <option>Year 6</option><option>Year 7</option><option>Year 8</option>
+              <option>Year 9</option><option>Year 10</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="cs">Cambridge Stage</label>
+            <select id="cs">
+              <option value="">— Select —</option>
+              <option value="Cambridge Primary Stage 6">Primary 6</option>
+              <option value="Cambridge Lower Secondary Stage 7">Stage 7</option>
+              <option value="Cambridge Lower Secondary Stage 8">Stage 8</option>
+              <option value="Cambridge Lower Secondary Stage 9">Stage 9</option>
+              <option value="Pre-IGCSE">Pre-IGCSE</option>
+            </select>
+          </div>
+        </div>
+        <div class="field">
+          <label for="tt">Assignment Type</label>
+          <input type="text" id="tt" placeholder="e.g. Descriptive writing, narrative essay">
+        </div>
+        <div class="errmsg" id="em" role="alert"></div>
+        <button class="btn-analyse" id="ab" disabled>
+          🔍 <span id="bt">Analyse Writing</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- RIGHT PANEL -->
+  <div>
+    <div class="empty" id="es">
+      <div class="empty-icon">📋</div>
+      <div style="font-size:15px;font-weight:600;margin-bottom:8px">Ready to analyse</div>
+      <div style="font-size:13px;line-height:1.7">Upload a photo of handwritten student work,<br>fill in their details, then click Analyse Writing.</div>
+    </div>
+
+    <div class="loading" id="lo" aria-live="polite">
+      <div class="spinner"></div>
+      <div style="font-size:14px;font-weight:600">Analysing student work…</div>
+      <div class="load-stage" id="ls">Reading handwriting</div>
+    </div>
+
+    <div class="results card" id="ra">
+      <div class="abar" id="ah"></div>
+      <div class="tabs">
+        <button class="tab on" onclick="sw('tr')">Transcription</button>
+        <button class="tab" onclick="sw('er')">Errors</button>
+        <button class="tab" onclick="sw('ta')">Follow-up Tasks</button>
+        <button class="tab" onclick="sw('tn')">Teacher Notes</button>
+      </div>
+      <div class="tpanel on" id="tp-tr">
+        <div class="sum-txt" id="sb"></div>
+        <div class="str-row" id="sr"></div>
+        <div class="transcript" id="tx"></div>
+      </div>
+      <div class="tpanel" id="tp-er"><div id="ec"></div></div>
+      <div class="tpanel" id="tp-ta"><div id="tc"></div></div>
+      <div class="tpanel" id="tp-tn"><div class="tnotes" id="tnc"></div></div>
+      <button class="btn-dl" id="dlb" onclick="dlDoc()">📄 Download Word Report (.docx)</button>
+    </div>
+  </div>
+</main>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<script>
+var b64=null,imtype=null,aData=null,sInfo={};
+var fi=document.getElementById('fi'),uz=document.getElementById('uz'),pw=document.getElementById('pw'),pi=document.getElementById('pi'),ab=document.getElementById('ab');
+
+fi.addEventListener('change',function(e){if(e.target.files[0])hf(e.target.files[0])});
+document.getElementById('rmb').addEventListener('click',function(e){e.stopPropagation();clr()});
+uz.addEventListener('dragover',function(e){e.preventDefault();uz.classList.add('over')});
+uz.addEventListener('dragleave',function(){uz.classList.remove('over')});
+uz.addEventListener('drop',function(e){e.preventDefault();uz.classList.remove('over');var f=e.dataTransfer.files[0];if(f&&f.type.startsWith('image/'))hf(f)});
+
+function hf(f){imtype=f.type;var r=new FileReader();r.onload=function(e){b64=e.target.result.split(',')[1];pi.src=e.target.result;pw.style.display='block';chk()};r.readAsDataURL(f)}
+function clr(){b64=null;imtype=null;pw.style.display='none';pi.src='';fi.value='';chk()}
+function chk(){ab.disabled=!(b64&&document.getElementById('sn').value.trim())}
+document.getElementById('sn').addEventListener('input',chk);
+
+function sw(id){
+  var ids=['tr','er','ta','tn'];
+  document.querySelectorAll('.tab').forEach(function(t,i){t.classList.toggle('on',ids[i]===id)});
+  document.querySelectorAll('.tpanel').forEach(function(p){p.classList.toggle('on',p.id==='tp-'+id)});
+}
+
+ab.addEventListener('click',doAnalyse);
+
+async function doAnalyse(){
+  var nm=document.getElementById('sn').value.trim();
+  var yg=document.getElementById('yg').value;
+  var cs=document.getElementById('cs').value;
+  var tt=document.getElementById('tt').value.trim();
+  if(!b64){shErr('Please upload a photo of the student\'s work.');return}
+  if(!nm){shErr('Please enter the student\'s name.');return}
+  hideErr();
+  sInfo={name:nm,year:yg,stage:cs,task:tt,date:new Date().toLocaleDateString('en-GB',{day:'numeric',month:'long',year:'numeric'})};
+  setLoad(true);
+  var stages=['Reading handwriting…','Identifying errors…','Comparing to Cambridge level…','Generating follow-up tasks…','Almost done…'];
+  var si=0;var iv=setInterval(function(){si=(si+1)%stages.length;document.getElementById('ls').textContent=stages[si]},2200);
+  try{var res=await callApi();clearInterval(iv);aData=res;render(res)}
+  catch(e){clearInterval(iv);shErr('Analysis failed: '+e.message);setLoad(false);document.getElementById('es').style.display='block'}
+}
+
+function setLoad(on){
+  document.getElementById('lo').style.display=on?'block':'none';
+  document.getElementById('es').style.display=on?'none':'block';
+  document.getElementById('ra').style.display='none';
+  ab.disabled=on;document.getElementById('bt').textContent=on?'Analysing…':'Analyse Writing';
+}
+
+async function callApi(){
+  var sys='You are an expert English teacher and Cambridge-trained assessor specialising in KS3 English and Cambridge Lower Secondary/IGCSE programmes. Analyse the handwritten student work in the image.\n\nTasks:\n1. Transcribe the text accurately (preserve original student wording, do not correct)\n2. Identify ALL grammar, spelling, and punctuation errors\n3. Classify each: PATTERN (recurring/systematic, 2+ occurrences or clear knowledge gap) vs CARELESS (one-off slip inconsistent with overall ability)\n4. Assess against Cambridge descriptors for '+sInfo.stage+'\n5. Generate targeted follow-up exercises (at least 2 per identified pattern error)\n\nCAMBRIDGE LEVEL DESCRIPTORS:\n- Primary Stage 6: Simple/compound sentences, basic punctuation (full stops, capitals, commas, question marks), short paragraphs, common vocabulary, phonetically plausible spelling of most words\n- Lower Secondary Stage 7: Compound/complex sentences attempted, apostrophes for omission, direct speech attempted, consistent paragraphing, wider vocabulary, most common words spelt correctly\n- Lower Secondary Stage 8: Variety of sentence structures for deliberate effect, colons/semicolons/dashes used, sustained paragraphing, ambitious vocabulary, complex spelling mostly accurate\n- Lower Secondary Stage 9: Sophisticated controlled syntax, full punctuation repertoire used purposefully, cohesive structure, precise varied vocabulary, near-accurate spelling of complex words\n- Pre-IGCSE: IGCSE-level writing, sophisticated register, crafted language choices, writing shaped for effect\n\nReturn ONLY valid JSON (no markdown fences, no preamble):\n{"transcription":"","word_count":0,"overall_assessment":{"current_level":"","expected_level":"'+sInfo.stage+'","meeting_expectations":true,"above_expectations":false,"summary":"2-3 sentence holistic assessment"},"strengths":["strength1","strength2"],"errors":{"spelling":{"patterns":[{"error":"","examples":[""],"frequency":0,"teaching_focus":""}],"careless":[{"error":"","example":"","correction":""}]},"grammar":{"patterns":[...],"careless":[...]},"punctuation":{"patterns":[...],"careless":[...]}},"follow_up_tasks":[{"id":1,"title":"","targets":"pattern","skill":"spelling|grammar|punctuation","error_being_addressed":"","introduction":"2-3 student-facing sentences about what to work on","teaching_point":"3-5 sentence student-friendly rule explanation","exercises":[{"type":"gap_fill|correction|rewrite","instruction":"clear student-facing instruction","content":"full exercise with 6-8 complete sentences or items","answer_guide":"teacher notes on correct answers"}]}],"accuracy_tasks":[{"title":"Proofreading and Accuracy","introduction":"","exercises":[{"type":"proofreading","instruction":"Find and correct all the errors in this passage:","content":"50-80 word passage with 6-8 deliberate errors matching the student\'s careless mistake types","answer_guide":"list each error and its correction"}]}],"teacher_notes":"professional notes: key patterns, ESL interference indicators, priority teaching points, suggested groupings with similar students"}';
+
+  var resp=await fetch('https://api.anthropic.com/v1/messages',{
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({
+      model:'claude-sonnet-4-20250514',
+      max_tokens:4096,
+      system:sys,
+      messages:[{role:'user',content:[
+        {type:'image',source:{type:'base64',media_type:imtype,data:b64}},
+        {type:'text',text:'Student: '+sInfo.name+'. Year: '+(sInfo.year||'not specified')+'. Expected Cambridge stage: '+(sInfo.stage||'not specified')+'. Assignment type: '+(sInfo.task||'general writing')+'. Please analyse this handwritten student work.'}
+      ]}]
+    })
+  });
+  if(!resp.ok){var err=await resp.json().catch(function(){return{}});throw new Error(err.error&&err.error.message?err.error.message:'API error '+resp.status)}
+  var d=await resp.json();
+  var txt=d.content&&d.content.find(function(b){return b.type==='text'})?d.content.find(function(b){return b.type==='text'}).text:'';
+  var clean=txt.replace(/^```(?:json)?\s*/i,'').replace(/\s*```\s*$/,'').trim();
+  try{return JSON.parse(clean)}catch(e){var m=clean.match(/\{[\s\S]+\}/);if(m)return JSON.parse(m[0]);throw new Error('Could not parse response — please try again.')}
+}
+
+function xe(s){if(!s)return'';return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}
+
+function render(d){
+  setLoad(false);
+  document.getElementById('es').style.display='none';
+  document.getElementById('ra').style.display='block';
+  var oa=d.overall_assessment||{};
+  var bc=oa.above_expectations?'lba':oa.meeting_expectations?'lbm':'lbb';
+  var bl=oa.above_expectations?'▲ Above expected level':oa.meeting_expectations?'✓ Meeting expected level':'↓ Below expected level';
+  document.getElementById('ah').innerHTML='<div class="aname">'+xe(sInfo.name)+'</div><div class="ameta">'+(sInfo.year?'<span>📚 '+xe(sInfo.year)+'</span>':'')+(oa.current_level?'<span>📊 '+xe(oa.current_level)+'</span>':'')+(d.word_count?'<span>📝 '+d.word_count+' words</span>':'')+'<span>📅 '+xe(sInfo.date)+'</span></div><span class="lbadge '+bc+'">'+bl+'</span>';
+  document.getElementById('sb').textContent=oa.summary||'';
+  document.getElementById('sr').innerHTML=(d.strengths||[]).map(function(s){return'<span class="pill">✓ '+xe(s)+'</span>'}).join('')||'<span style="font-size:12px;color:var(--muted)">No specific strengths noted.</span>';
+  document.getElementById('tx').textContent=d.transcription||'(No transcription available)';
+  document.getElementById('ec').innerHTML=buildErrors(d.errors||{});
+  var tasks=(d.follow_up_tasks||[]).concat((d.accuracy_tasks||[]).map(function(t){return Object.assign({},t,{targets:'accuracy'})}));
+  document.getElementById('tc').innerHTML=tasks.length?tasks.map(function(t,i){return buildTask(t,i+1)}).join(''):'<div class="no-tasks">No follow-up tasks generated.</div>';
+  document.getElementById('tnc').textContent=d.teacher_notes||'No additional notes.';
+}
+
+function buildErrors(errs){
+  var cats=[{k:'spelling',l:'Spelling'},{k:'grammar',l:'Grammar'},{k:'punctuation',l:'Punctuation'}];
+  var h='',any=false;
+  cats.forEach(function(c){
+    var ce=errs[c.k]||{},pts=ce.patterns||[],cls=ce.careless||[];
+    if(!pts.length&&!cls.length)return;any=true;
+    h+='<div class="ecat">'+c.l+'</div>';
+    pts.forEach(function(p){h+='<div class="erow"><span class="etag ep">Pattern</span><div><div class="edes">'+xe(p.error)+(p.frequency?' <span style="font-size:11px;opacity:.7">(×'+p.frequency+')</span>':'')+'</div>'+(p.examples&&p.examples.length?'<div class="eex">e.g. '+p.examples.slice(0,3).map(xe).join(' · ')+'</div>':'')+(p.teaching_focus?'<div class="efoc">▸ '+xe(p.teaching_focus)+'</div>':'')+'</div></div>'});
+    cls.forEach(function(c2){h+='<div class="erow"><span class="etag ec">Careless</span><div><div class="edes">'+xe(c2.error)+'</div>'+(c2.example?'<div class="eex">"'+xe(c2.example)+'"'+(c2.correction?' → "'+xe(c2.correction)+'"':'')+'</div>':'')+'</div></div>'});
+  });
+  return any?h:'<div class="no-errs">🎉 No errors identified — impressive work!</div>';
+}
+
+function buildTask(t,n){
+  var badge=t.targets==='accuracy'?'ec':'ep';
+  var label=t.targets==='accuracy'?'Accuracy':'Pattern · '+(t.skill||'');
+  var exs=(t.exercises||[]).map(function(e){return'<div class="ex"><div class="exinstr">'+xe(e.instruction)+'</div><div class="excont">'+xe(e.content)+'</div>'+(e.answer_guide?'<div class="exguide">📋 Teacher guide: '+xe(e.answer_guide)+'</div>':'')+'</div>'}).join('');
+  return'<div class="task"><div class="thead" onclick="tt('+n+')"><div class="tnum">'+n+'</div><div class="tinfo"><div class="ttit">'+xe(t.title)+'</div><div class="tsub"><span class="etag '+badge+'" style="font-size:9px">'+xe(label)+'</span> '+xe(t.error_being_addressed||'')+'</div></div><div class="tchev" id="tc'+n+'">▾</div></div><div class="tbody" id="tb'+n+'">'+(t.introduction?'<div class="tintro">'+xe(t.introduction)+'</div>':'')+(t.teaching_point?'<div class="tpt">'+xe(t.teaching_point)+'</div>':'')+exs+'</div></div>';
+}
+
+function tt(n){var b=document.getElementById('tb'+n),c=document.getElementById('tc'+n);var on=b.classList.toggle('on');c.style.transform=on?'rotate(180deg)':''}
+function shErr(m){var e=document.getElementById('em');e.textContent=m;e.style.display='block'}
+function hideErr(){document.getElementById('em').style.display='none'}
+
+// ─── Word Document Generation ─────────────────────────────
+async function dlDoc(){
+  if(!aData){alert('No analysis data yet. Please analyse a submission first.');return}
+  if(typeof JSZip==='undefined'){alert('JSZip library not loaded. Please check your internet connection.');return}
+  var d=aData,s=sInfo;
+  function xe2(v){if(v==null)return'';return String(v).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&apos;')}
+  function para(t,o){
+    o=o||{};var b=o.b||false,sz=o.sz||22,col=o.col||'000000',bef=o.bef||0,aft=o.aft!=null?o.aft:120,ind=o.ind||0,it=o.it||false,al=o.al||'left';
+    var jc=al!='left'?'<w:jc w:val="'+al+'"/>':'';var ip=ind?'<w:ind w:left="'+ind+'"/>'  :'';
+    return'<w:p><w:pPr><w:spacing w:before="'+bef+'" w:after="'+aft+'"/>'+ip+jc+'</w:pPr><w:r><w:rPr>'+(b?'<w:b/><w:bCs/>':'')+(it?'<w:i/><w:iCs/>':'')+'<w:sz w:val="'+sz+'"/><w:szCs w:val="'+sz+'"/><w:color w:val="'+col+'"/></w:rPr><w:t xml:space="preserve">'+xe2(t)+'</w:t></w:r></w:p>'
+  }
+  function h1(t){return'<w:p><w:pPr><w:pStyle w:val="Heading1"/><w:spacing w:before="280" w:after="120"/></w:pPr><w:r><w:t>'+xe2(t)+'</w:t></w:r></w:p>'}
+  function h2(t){return'<w:p><w:pPr><w:pStyle w:val="Heading2"/><w:spacing w:before="200" w:after="80"/></w:pPr><w:r><w:t>'+xe2(t)+'</w:t></w:r></w:p>'}
+  function pb(){return'<w:p><w:r><w:br w:type="page"/></w:r></w:p>'}
+  function hr(){return'<w:p><w:pPr><w:pBdr><w:bottom w:val="single" w:sz="6" w:space="1" w:color="AAAAAA"/></w:pBdr><w:spacing w:before="100" w:after="100"/></w:pPr></w:p>'}
+  function bullet(t){return'<w:p><w:pPr><w:numPr><w:ilvl w:val="0"/><w:numId w:val="1"/></w:numPr><w:spacing w:before="0" w:after="80"/></w:pPr><w:r><w:rPr><w:sz w:val="22"/><w:szCs w:val="22"/></w:rPr><w:t xml:space="preserve">'+xe2(t)+'</w:t></w:r></w:p>'}
+
+  var oa=d.overall_assessment||{};
+  var allTasks=(d.follow_up_tasks||[]).concat((d.accuracy_tasks||[]).map(function(t){return Object.assign({},t,{targets:'accuracy'})}));
+  var body='';
+
+  // Title page
+  body+=para('WRITING ANALYSIS REPORT',{b:true,sz:34,col:'1C2B45',aft:80,al:'center'});
+  body+=para('International School of Neustadt',{sz:20,col:'666666',al:'center',aft:60});
+  body+=hr();
+  body+=para('',{sz:10,aft:40});
+  body+=para('Student: '+s.name,{b:true,sz:28,col:'1C2B45',aft:60});
+  if(s.year)body+=para('Year Group: '+s.year,{sz:22,aft:40});
+  if(s.stage)body+=para('Cambridge Stage: '+s.stage,{sz:22,aft:40});
+  if(s.task)body+=para('Assignment: '+s.task,{sz:22,aft:40});
+  body+=para('Date: '+s.date,{sz:22,aft:40});
+  if(oa.current_level)body+=para('Assessed Level: '+oa.current_level,{sz:22,aft:40});
+  var st=oa.above_expectations?'Above Expected Level':oa.meeting_expectations?'Meeting Expected Level':'Below Expected Level';
+  var sc=oa.above_expectations?'1D4ED8':oa.meeting_expectations?'16A34A':'DC2626';
+  body+=para('Status: '+st,{b:true,sz:22,col:sc,aft:200});
+  body+=pb();
+
+  // Assessment
+  body+=h1('Overall Assessment');
+  if(oa.summary)body+=para(oa.summary,{sz:22,aft:160});
+  if(d.strengths&&d.strengths.length){body+=h2('Strengths');d.strengths.forEach(function(s2){body+=bullet(s2)});body+=para('',{sz:10,aft:80})}
+
+  // Transcription
+  body+=h1('Transcription of Student Work');
+  body+=para(d.transcription||'(No transcription available)',{sz:22,it:true,aft:160});
+  body+=pb();
+
+  // Error Analysis
+  body+=h1('Error Analysis');
+  body+=para('Pattern errors = systematic knowledge gaps. Careless errors = one-off slips.',{sz:20,col:'555555',aft:160});
+  [{k:'spelling',l:'Spelling'},{k:'grammar',l:'Grammar'},{k:'punctuation',l:'Punctuation'}].forEach(function(cat){
+    var ce=d.errors&&d.errors[cat.k]||{},pts=ce.patterns||[],cls=ce.careless||[];
+    if(!pts.length&&!cls.length)return;
+    body+=h2(cat.l);
+    if(pts.length){
+      body+=para('Pattern Errors (Knowledge Gaps):',{b:true,sz:22,col:'DC2626',bef:80,aft:40});
+      pts.forEach(function(p){
+        body+=para('- '+p.error+(p.frequency?' (x'+p.frequency+')':''),{b:true,sz:22,aft:40});
+        if(p.examples&&p.examples.length)body+=para('Examples: '+p.examples.join('; '),{sz:20,it:true,col:'666666',aft:40,ind:360});
+        if(p.teaching_focus)body+=para('Teaching focus: '+p.teaching_focus,{sz:20,col:'1E7B60',aft:80,ind:360});
+      });
+    }
+    if(cls.length){
+      body+=para('Careless Errors (Accuracy):',{b:true,sz:22,col:'D97706',bef:80,aft:40});
+      cls.forEach(function(c){body+=para('- '+c.error+(c.example?': "'+c.example+'"'+(c.correction?' → "'+c.correction+'"':''):''),{sz:22,aft:60})});
+    }
+  });
+
+  // Follow-up Tasks
+  if(allTasks.length){
+    body+=pb();
+    body+=h1('Follow-up Tasks');
+    body+=para('Complete these tasks to address the specific errors identified above. Pattern tasks address knowledge gaps; Accuracy tasks build care and checking habits.',{sz:20,col:'555555',aft:160});
+    allTasks.forEach(function(tk,idx){
+      if(idx>0)body+=hr();
+      var tl=tk.targets==='accuracy'?'[ACCURACY]':'[PATTERN · '+(tk.skill||'').toUpperCase()+']';
+      var tc=tk.targets==='accuracy'?'D97706':'DC2626';
+      body+=h2('Task '+(idx+1)+': '+tk.title);
+      body+=para(tl,{b:true,sz:18,col:tc,aft:80});
+      if(tk.error_being_addressed)body+=para('Addresses: '+tk.error_being_addressed,{sz:20,it:true,col:'555555',aft:100});
+      if(tk.introduction)body+=para(tk.introduction,{sz:22,aft:120});
+      if(tk.teaching_point){body+=para('What You Need to Know:',{b:true,sz:22,col:'1C2B45',bef:80,aft:60});body+=para(tk.teaching_point,{sz:22,aft:120})}
+      (tk.exercises||[]).forEach(function(ex,ei){
+        body+=para('Exercise '+(ei+1),{b:true,sz:22,col:'1C2B45',bef:80,aft:40});
+        body+=para(ex.instruction||'',{b:true,sz:22,aft:60});
+        (ex.content||'').split('\n').forEach(function(ln){if(ln.trim())body+=para(ln,{sz:22,aft:60,ind:360})});
+        if(ex.answer_guide)body+=para('Teacher\'s Guide: '+ex.answer_guide,{sz:20,it:true,col:'666666',bef:80,aft:80});
+      });
+    });
+  }
+
+  // Teacher Notes
+  if(d.teacher_notes){
+    body+=pb();
+    body+=h1('Teacher Notes (Confidential)');
+    d.teacher_notes.split('\n').forEach(function(ln){if(ln.trim())body+=para(ln,{sz:22,aft:100})});
+  }
+
+  var docXml='<?xml version="1.0" encoding="UTF-8" standalone="yes"?><w:document xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships" xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"><w:body>'+body+'<w:sectPr><w:pgSz w:w="11906" w:h="16838"/><w:pgMar w:top="1440" w:right="1440" w:bottom="1440" w:left="1440"/></w:sectPr></w:body></w:document>';
+  var stylesXml='<?xml version="1.0" encoding="UTF-8" standalone="yes"?><w:styles xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"><w:docDefaults><w:rPrDefault><w:rPr><w:rFonts w:ascii="Arial" w:hAnsi="Arial"/><w:sz w:val="22"/><w:szCs w:val="22"/><w:lang w:val="en-GB"/></w:rPr></w:rPrDefault></w:docDefaults><w:style w:type="paragraph" w:styleId="Normal"><w:name w:val="Normal"/><w:pPr><w:spacing w:after="120"/></w:pPr></w:style><w:style w:type="paragraph" w:styleId="Heading1"><w:name w:val="heading 1"/><w:basedOn w:val="Normal"/><w:pPr><w:spacing w:before="280" w:after="120"/><w:pBdr><w:bottom w:val="single" w:sz="6" w:space="1" w:color="1C2B45"/></w:pBdr></w:pPr><w:rPr><w:b/><w:bCs/><w:sz w:val="30"/><w:szCs w:val="30"/><w:color w:val="1C2B45"/></w:rPr></w:style><w:style w:type="paragraph" w:styleId="Heading2"><w:name w:val="heading 2"/><w:basedOn w:val="Normal"/><w:pPr><w:spacing w:before="200" w:after="80"/></w:pPr><w:rPr><w:b/><w:bCs/><w:sz w:val="24"/><w:szCs w:val="24"/><w:color w:val="1E7B60"/></w:rPr></w:style></w:styles>';
+  var numXml='<?xml version="1.0" encoding="UTF-8" standalone="yes"?><w:numbering xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"><w:abstractNum w:abstractNumId="0"><w:lvl w:ilvl="0"><w:start w:val="1"/><w:numFmt w:val="bullet"/><w:lvlText w:val="&#x2022;"/><w:lvlJc w:val="left"/><w:pPr><w:ind w:left="720" w:hanging="360"/></w:pPr></w:lvl></w:abstractNum><w:num w:numId="1"><w:abstractNumId w:val="0"/></w:num></w:numbering>';
+  var ctXml='<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/word/document.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/><Override PartName="/word/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.styles+xml"/><Override PartName="/word/numbering.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.numbering+xml"/></Types>';
+  var rXml='<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="word/document.xml"/></Relationships>';
+  var drXml='<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/><Relationship Id="rId2" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/numbering" Target="numbering.xml"/></Relationships>';
+
+  var zip=new JSZip();
+  zip.file('[Content_Types].xml',ctXml);zip.file('_rels/.rels',rXml);
+  var wf=zip.folder('word');
+  wf.file('document.xml',docXml);wf.file('styles.xml',stylesXml);wf.file('numbering.xml',numXml);wf.file('_rels/document.xml.rels',drXml);
+  var blob=await zip.generateAsync({type:'blob',mimeType:'application/vnd.openxmlformats-officedocument.wordprocessingml.document'});
+  var url=URL.createObjectURL(blob);
+  var a=document.createElement('a');a.href=url;a.download=s.name.replace(/\s+/g,'_')+'_Writing_Analysis_'+new Date().toISOString().slice(0,10)+'.docx';document.body.appendChild(a);a.click();document.body.removeChild(a);setTimeout(function(){URL.revokeObjectURL(url)},5000);
+}
+</script>
+</body>
+</html>
